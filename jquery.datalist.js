@@ -26,12 +26,12 @@
 $.fn.datalist = function() {
   
   //first test for native placeholder support before continuing
-  return ((typeof this[0].list === 'object' ) && (document.createElement('datalist') && !!window.HTMLDataListElement)) ? this : this.each(function() {
+  return ((this.length > 0) && (typeof this[0].list === 'object' ) && (document.createElement('datalist') && !!window.HTMLDataListElement)) ? this : this.each(function() {
     //local vars
     var $this = $(this),
         //the main guts of the plugin
         datalist = $('#' + $this.attr('list')),
-        opts = datalist.find('option'),
+        opts = $("option", datalist),
         
         //wrapper stuffs
         width = $this.width(),
@@ -62,7 +62,7 @@ $.fn.datalist = function() {
       opts.each(function(i, opt) {
         $('<li>')
           .append('<span class="value">'+opt.value+'</span>')
-          .append('<span class="label" style="float:right">'+opt.label+'</span>')
+          .append('<span class="label" style="float:right">'+(opt.label? opt.label : "")+'</span>')
           .appendTo(ul);
       });
     };
@@ -73,7 +73,9 @@ $.fn.datalist = function() {
     
     //show it on focus
     $this.focus(function(){
-      ul.show(); 
+      //unhide all options until they start typing
+      $("li", ul).css("display", "block");
+      ul.show();
     });
     
     //hide it on blur
@@ -82,10 +84,23 @@ $.fn.datalist = function() {
     });
     
     //set value of input to clicked option
-    var lis = $this.next().find('li');
-    lis.mousedown(function(){
-      var value = $(this).find('span.value').text();
+    $("li", ul).mousedown(function(){
+      var value = $('span.value', this).text();
       $this.val(value); 
+    });
+    
+    //hide options that don't match input
+    $this.keyup(function(e){
+      var lis = $("li", $this.next());
+      lis.each(function(i, li){
+        var value = $("span.value", li),
+            label = $("span.label", li);
+        if(value.text().toLowerCase().indexOf($this.val().toLowerCase()) > -1 || label.text().toLowerCase().indexOf($this.val().toLowerCase()) > -1) {
+          $(li).css("display", "block");
+        } else {
+          $(li).css("display", "none");
+        }
+      });
     });
   });
 };
